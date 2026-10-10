@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 
 export default function OfferBar() {
@@ -20,7 +19,7 @@ export default function OfferBar() {
           sm:gap-4
         "
       >
-        {/* OFFER BADGE */}
+        {/* SPECIAL OFFER BADGE */}
         <span
           className="
             inline-flex
@@ -44,11 +43,11 @@ export default function OfferBar() {
             sm:text-xs
           "
         >
-          <span>🚀</span>
-          DIGITAL GROWTH
+          <span>🔥</span>
+          SPECIAL OFFER · 50% OFF
         </span>
 
-        {/* OFFER TEXT */}
+        {/* OFFER SERVICES - DESKTOP */}
         <p
           className="
             hidden
@@ -60,21 +59,23 @@ export default function OfferBar() {
             sm:flex
           "
         >
-          Websites
+          <span>Websites</span>
           <span className="text-lime-400">•</span>
-          Google Ads
+          <span>Google Ads</span>
           <span className="text-lime-400">•</span>
           <span className="font-bold text-white">
             Digital Marketing
           </span>
         </p>
 
-        {/* MOBILE TEXT */}
+        {/* OFFER TEXT - MOBILE */}
         <p className="text-[11px] font-medium text-slate-300 sm:hidden">
-          Grow your business online
+          Websites <span className="text-lime-400">•</span>{" "}
+          Google Ads <span className="text-lime-400">•</span>{" "}
+          Digital Marketing
         </p>
 
-        {/* CTA BUTTON */}
+        {/* CLAIM OFFER BUTTON */}
         <Link
           to="/contact"
           className="
@@ -106,7 +107,7 @@ export default function OfferBar() {
             focus-visible:ring-offset-[#09090b]
           "
         >
-          Baat Karein
+          Claim Offer
           <span
             className="
               inline-block
