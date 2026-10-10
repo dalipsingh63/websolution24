@@ -1,0 +1,200 @@
+@import "tailwindcss";
+
+/* Admin Settings: dark theme */
+html[data-admin-theme="dark"] .admin-root {
+  background-color: #0f172a !important;
+  color: #e2e8f0;
+}
+
+html[data-admin-theme="dark"] .admin-root .bg-white,
+html[data-admin-theme="dark"] .admin-root .settings-card {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+html[data-admin-theme="dark"] .admin-root .bg-slate-50,
+html[data-admin-theme="dark"] .admin-root .bg-slate-100 {
+  background-color: #0f172a !important;
+}
+
+html[data-admin-theme="dark"] .admin-root .text-slate-900,
+html[data-admin-theme="dark"] .admin-root .text-slate-800,
+html[data-admin-theme="dark"] .admin-root .text-slate-700 {
+  color: #f1f5f9 !important;
+}
+
+html[data-admin-theme="dark"] .admin-root .text-slate-600,
+html[data-admin-theme="dark"] .admin-root .text-slate-500 {
+  color: #cbd5e1 !important;
+}
+
+html[data-admin-theme="dark"] .admin-root .border-slate-200,
+html[data-admin-theme="dark"] .admin-root .border-slate-300 {
+  border-color: #475569 !important;
+}
+
+html[data-admin-theme="dark"] .admin-root .bg-lime-50 {
+  background-color: #164e63 !important;
+}
+
+html[data-admin-theme="dark"] .admin-root .text-lime-700 {
+  color: #a5f3fc !important;
+}
+
+html[data-admin-theme="dark"] .admin-root .bg-emerald-50 {
+  background-color: #064e3b !important;
+}
+
+html[data-admin-theme="dark"] .admin-root .text-emerald-800 {
+  color: #a7f3d0 !important;
+}
+
+/* Dark mode: admin header */
+html[data-admin-theme="dark"] .admin-root header {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+html[data-admin-theme="dark"] .admin-root header h1,
+html[data-admin-theme="dark"] .admin-root header p,
+html[data-admin-theme="dark"] .admin-root header button {
+  color: #e2e8f0;
+}
+
+/* Dark mode: settings option buttons */
+html[data-admin-theme="dark"] .admin-root .settings-card button {
+  color: #e2e8f0;
+}
+
+html[data-admin-theme="dark"] .admin-root .settings-card button.bg-white {
+  background-color: #1e293b !important;
+}
+
+html[data-admin-theme="dark"] .admin-root .settings-card button.bg-lime-50 {
+  background-color: #164e63 !important;
+  border-color: #22d3ee !important;
+}
+
+/* Compact layout */
+html[data-admin-density="compact"] .admin-root .admin-main {
+  padding: 0.75rem;
+}
+
+html[data-admin-density="compact"] .admin-root .settings-card {
+  padding: 1rem;
+}
+
+html[data-admin-density="compact"] .admin-root .grid {
+  row-gap: 0.75rem;
+}
+
+/* Disable interface transitions */
+html[data-admin-animations="false"] *,
+html[data-admin-animations="false"] *::before,
+html[data-admin-animations="false"] *::after {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
+}
+
+
+
+
+
+/* about page css */
+
+/* =========================================
+   GLOBAL WEBSITE SPACING
+   Applies to public website pages
+========================================= */
+
+/* Standard section spacing */
+main > section[class*="py-20"],
+main > section[class*="py-24"] {
+  padding-top: 3.5rem !important;
+  padding-bottom: 3.5rem !important;
+}
+
+@media (min-width: 768px) {
+  main > section[class*="py-20"],
+  main > section[class*="py-24"] {
+    padding-top: 4rem !important;
+    padding-bottom: 4rem !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  main > section[class*="py-20"],
+  main > section[class*="py-24"] {
+    padding-top: 4.5rem !important;
+    padding-bottom: 4.5rem !important;
+  }
+}
+
+/* Headings: balanced line height */
+main h1 {
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+}
+
+main h2 {
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+main h3 {
+  line-height: 1.35;
+}
+
+/* Paragraphs: readable, not overly spaced */
+main p {
+  line-height: 1.7;
+}
+
+/* Reduce large gap immediately after headings */
+main h1 + p,
+main h2 + p {
+  margin-top: 1rem !important;
+}
+
+/* Keep small card content compact */
+main article p,
+main article h3 {
+  line-height: 1.6;
+}
+
+/* Footer ke just pehle unnecessary blank space na ho */
+main > section:last-child {
+  margin-bottom: 0 !important;
+}
+
+/* Mobile screens: tighter vertical rhythm */
+@media (max-width: 640px) {
+  main > section[class*="py-20"],
+  main > section[class*="py-24"] {
+    padding-top: 2.75rem !important;
+    padding-bottom: 2.75rem !important;
+  }
+
+  main h1 {
+    line-height: 1.18;
+  }
+
+  main h2 {
+    line-height: 1.25;
+  }
+
+  main p {
+    line-height: 1.65;
+  }
+}
+
+
+
+
+
+
+/* Home page: reduce gap before footer */
+.home-page > section:last-child {
+  padding-bottom: 2px !important;
+}
