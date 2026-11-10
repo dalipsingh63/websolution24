@@ -6,6 +6,7 @@ import { requireAdmin } from "../middleware/requireAdmin.js";
 const router = express.Router();
 
 const IST_OFFSET = 330 * 60 * 1000;
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 const getISTDayStart = (date = new Date()) => {
   const istDate = new Date(date.getTime() + IST_OFFSET);
@@ -17,6 +18,121 @@ const getISTDayStart = (date = new Date()) => {
       istDate.getUTCDate()
     ) - IST_OFFSET
   );
+};
+
+const getISTDateParts = (date = new Date()) => {
+  const istDate = new Date(date.getTime() + IST_OFFSET);
+
+  return {
+    year: istDate.getUTCFullYear(),
+    month: istDate.getUTCMonth() + 1,
+    day: istDate.getUTCDate(),
+  };
+};
+
+const getISTStart = (year, month, day = 1) => {
+  return new Date(
+    Date.UTC(year, month - 1, day) - IST_OFFSET
+  );
+};
+
+const parseDate = (value) => {
+  if (
+    typeof value !== "string" ||
+    !/^\d{4}-\d{2}-\d{2}$/.test(value)
+  ) {
+    return null;
+  }
+
+  const date = new Date(`${value}T00:00:00.000Z`);
+
+  if (date.toISOString().slice(0, 10) !== value) {
+    return null;
+  }
+
+  return value;
+};
+
+const getDateRange = (range, from, to) => {
+  const now = new Date();
+  const todayStart = getISTDayStart(now);
+  const today = getISTDateParts(now);
+
+  let startDate;
+  let endDate = new Date(todayStart.getTime() + DAY_MS);
+
+  switch (range) {
+    case "today":
+      startDate = todayStart;
+      break;
+
+    case "yesterday":
+      startDate = new Date(todayStart.getTime() - DAY_MS);
+      endDate = todayStart;
+      break;
+
+    case "last7":
+      startDate = new Date(todayStart.getTime() - 6 * DAY_MS);
+      break;
+
+    case "last30":
+      startDate = new Date(todayStart.getTime() - 29 * DAY_MS);
+      break;
+
+    case "month":
+      startDate = getISTStart(today.year, today.month, 1);
+      break;
+
+    case "year":
+      startDate = getISTStart(today.year, 1, 1);
+      break;
+
+    case "custom": {
+      const validFrom = parseDate(from);
+      const validTo = parseDate(to);
+
+      if (!validFrom || !validTo || validFrom > validTo) {
+        return { error: "Please select a valid date range." };
+      }
+
+      startDate = new Date(
+        `${validFrom}T00:00:00.000Z`
+      );
+      startDate = new Date(startDate.getTime() - IST_OFFSET);
+
+      const toDate = new Date(
+        `${validTo}T00:00:00.000Z`
+      );
+
+      endDate = new Date(
+        toDate.getTime() - IST_OFFSET + DAY_MS
+      );
+
+      if (startDate > now) {
+        return { error: "Future dates are not allowed." };
+      }
+
+      return {
+        startDate,
+        endDate,
+        label: "Custom Date Range",
+      };
+    }
+
+    case "all":
+      startDate = null;
+      endDate = now;
+      break;
+
+    default:
+      return { error: "Invalid analytics date filter." };
+  }
+
+  return {
+    startDate,
+    endDate,
+    label: range,
+  };
 };
 
 const getSource = (referrer) => {
@@ -80,49 +196,90 @@ router.post("/track", async (req, res) => {
   }
 });
 
-// Admin API: analytics dashboard
+// Admin API: filtered analytics dashboard
 router.get("/overview", requireAdmin, async (req, res) => {
   try {
+    const {
+      range = "last30",
+      from,
+      to,
+    } = req.query;
+
+    const period = getDateRange(range, from, to);
+
+    if (period.error) {
+      return res.status(400).json({
+        success: false,
+        message: period.error,
+      });
+    }
+
+    const { startDate, endDate } = period;
+
+    const match = {
+      createdAt: {
+        $lte: endDate,
+        ...(startDate ? { $gte: startDate } : {}),
+      },
+    };
+
     const now = new Date();
     const todayStart = getISTDayStart(now);
-    const thirtyDaysStart = new Date(
-      todayStart.getTime() - 29 * 24 * 60 * 60 * 1000
-    );
     const activeSince = new Date(now.getTime() - 5 * 60 * 1000);
+
+    const todayMatch = {
+      createdAt: {
+        $gte: todayStart,
+        $lte: now,
+      },
+    };
+
+    const activeMatch = {
+      createdAt: {
+        $gte: activeSince,
+        $lte: now,
+      },
+    };
+
+    const duration = startDate
+      ? endDate.getTime() - startDate.getTime()
+      : Infinity;
+
+    const trendInterval =
+      range === "year" ||
+      range === "all" ||
+      duration > 90 * DAY_MS
+        ? "month"
+        : "day";
+
+    const dateFormat =
+      trendInterval === "month" ? "%Y-%m" : "%Y-%m-%d";
 
     const [
       totalPageViews,
       totalVisitorIds,
       todayVisitorIds,
       activeVisitorIds,
-      dailyRows,
+      trendRows,
       sourceRows,
       pageRows,
     ] = await Promise.all([
-      AnalyticsVisit.countDocuments(),
+      AnalyticsVisit.countDocuments(match),
 
-      AnalyticsVisit.distinct("visitorId"),
+      AnalyticsVisit.distinct("visitorId", match),
 
-      AnalyticsVisit.distinct("visitorId", {
-        createdAt: { $gte: todayStart },
-      }),
+      AnalyticsVisit.distinct("visitorId", todayMatch),
 
-      AnalyticsVisit.distinct("visitorId", {
-        createdAt: { $gte: activeSince },
-      }),
+      AnalyticsVisit.distinct("visitorId", activeMatch),
 
       AnalyticsVisit.aggregate([
-        {
-          $match: {
-            createdAt: { $gte: thirtyDaysStart },
-          },
-        },
+        { $match: match },
         {
           $group: {
             _id: {
-              date: {
+              period: {
                 $dateToString: {
-                  format: "%Y-%m-%d",
+                  format: dateFormat,
                   date: "$createdAt",
                   timezone: "Asia/Kolkata",
                 },
@@ -133,7 +290,7 @@ router.get("/overview", requireAdmin, async (req, res) => {
         },
         {
           $group: {
-            _id: "$_id.date",
+            _id: "$_id.period",
             visitors: { $sum: 1 },
           },
         },
@@ -141,11 +298,7 @@ router.get("/overview", requireAdmin, async (req, res) => {
       ]),
 
       AnalyticsVisit.aggregate([
-        {
-          $match: {
-            createdAt: { $gte: thirtyDaysStart },
-          },
-        },
+        { $match: match },
         {
           $group: {
             _id: {
@@ -165,11 +318,7 @@ router.get("/overview", requireAdmin, async (req, res) => {
       ]),
 
       AnalyticsVisit.aggregate([
-        {
-          $match: {
-            createdAt: { $gte: thirtyDaysStart },
-          },
-        },
+        { $match: match },
         {
           $group: {
             _id: "$page",
@@ -181,18 +330,29 @@ router.get("/overview", requireAdmin, async (req, res) => {
       ]),
     ]);
 
+    const trend = trendRows.map((row) => ({
+      date: row._id,
+      visitors: row.visitors,
+    }));
+
     return res.status(200).json({
       success: true,
       data: {
         totalVisitors: totalVisitorIds.length,
         pageViews: totalPageViews,
+
+        // Today's visitors always means the current IST day.
         todayVisitors: todayVisitorIds.length,
+
+        // Active users always means visitors active in the last 5 minutes.
         activeUsers: activeVisitorIds.length,
 
-        dailyVisitors: dailyRows.map((row) => ({
-          date: row._id,
-          visitors: row.visitors,
-        })),
+        trend,
+        trendInterval,
+
+        // Kept for compatibility with the existing dashboard.
+        dailyVisitors:
+          trendInterval === "day" ? trend : [],
 
         trafficSources: sourceRows.map((row) => ({
           source: row._id || "Other",
@@ -203,6 +363,18 @@ router.get("/overview", requireAdmin, async (req, res) => {
           page: row._id || "/",
           views: row.views,
         })),
+
+        period: {
+          range,
+          from: startDate
+            ? new Date(startDate.getTime() + IST_OFFSET)
+                .toISOString()
+                .slice(0, 10)
+            : null,
+          to: new Date(endDate.getTime() - 1 + IST_OFFSET)
+            .toISOString()
+            .slice(0, 10),
+        },
       },
     });
   } catch (error) {
