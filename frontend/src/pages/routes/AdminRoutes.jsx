@@ -9,6 +9,7 @@ import ManageServices from "../admin/ManageServices";
 import ManagePortfolio from "../admin/ManagePortfolio";
 import ManageLeads from "../admin/ManageLeads";
 import AdminSettings from "../admin/AdminSettings";
+import WebsiteAnalytics from "../admin/WebsiteAnalytics";
 
 export default function AdminRoutes() {
   return (
@@ -42,6 +43,11 @@ export default function AdminRoutes() {
           <Route
             path="/admin/settings"
             element={<AdminSettings />}
+          />
+
+          <Route
+            path="/admin/analytics"
+            element={<WebsiteAnalytics />}
           />
         </Route>
       </Route>
