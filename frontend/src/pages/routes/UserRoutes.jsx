@@ -2,7 +2,6 @@
 import { Routes, Route } from "react-router-dom";
 
 import UserLayout from "../../layouts/UserLayout";
-import VisitorTracking from "../../components/VisitorTracking";
 
 import Home from "../Home";
 import Services from "../Services";
@@ -13,14 +12,7 @@ import Contact from "../Contact";
 export default function UserRoutes() {
   return (
     <Routes>
-      <Route
-        element={
-          <>
-            <VisitorTracking />
-            <UserLayout />
-          </>
-        }
-      >
+      <Route element={<UserLayout />}>
         <Route path="/" element={<Home />} />
         <Route path="/services" element={<Services />} />
         <Route path="/portfolio" element={<Portfolio />} />
