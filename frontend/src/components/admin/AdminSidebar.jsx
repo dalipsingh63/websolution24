@@ -8,6 +8,7 @@ import {
   FaCog,
   FaSignOutAlt,
   FaTimes,
+  FaChartLine,
 } from "react-icons/fa";
 
 export default function AdminSidebar({ open, onClose }) {
@@ -33,6 +34,11 @@ export default function AdminSidebar({ open, onClose }) {
       label: "Leads",
       path: "/admin/leads",
       icon: FaUsers,
+    },
+    {
+      label: "Website Analytics",
+      path: "/admin/analytics",
+      icon: FaChartLine,
     },
     {
       label: "Settings",
