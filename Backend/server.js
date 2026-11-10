@@ -10,7 +10,7 @@ import AdminLoginRoutes from "./routes/AdminLoginRoutes.js";
 import LeadRoutes from "./routes/LeadRoutes.js";
 import portfolioRoutes from "./routes/portfolioRoutes.js";
 import ServiceRoutes from "./routes/ServiceRoutes.js";
-
+import AnalyticsRoutes from "./routes/AnalyticsRoutes.js";
 dotenv.config();
 
 if (!process.env.JWT_SECRET) {
@@ -173,6 +173,7 @@ app.use("/api/admin", AdminLoginRoutes);
 app.use("/api/leads", LeadRoutes);
 app.use("/api/portfolio", portfolioRoutes);
 app.use("/api/services", ServiceRoutes);
+app.use("/api/analytics", AnalyticsRoutes);
 
 // FRONTEND STATIC FILES
 const frontendPath = path.join(__dirname, "../frontend/dist");
