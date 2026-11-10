@@ -1,136 +1,216 @@
 
 import express from "express";
-import { BetaAnalyticsDataClient } from "@google-analytics/data";
+import AnalyticsVisit from "../models/AnalyticsVisit.js";
 import { requireAdmin } from "../middleware/requireAdmin.js";
 
 const router = express.Router();
 
-const getAnalyticsClient = () => {
-  const email = process.env.GA_CLIENT_EMAIL;
-  const privateKey = process.env.GA_PRIVATE_KEY;
+const IST_OFFSET = 330 * 60 * 1000;
 
-  if (!email || !privateKey) {
-    throw new Error("Google Analytics credentials are missing");
-  }
+const getISTDayStart = (date = new Date()) => {
+  const istDate = new Date(date.getTime() + IST_OFFSET);
 
-  return new BetaAnalyticsDataClient({
-    credentials: {
-      client_email: email,
-      private_key: privateKey.replace(/\\n/g, "\n"),
-    },
-  });
+  return new Date(
+    Date.UTC(
+      istDate.getUTCFullYear(),
+      istDate.getUTCMonth(),
+      istDate.getUTCDate()
+    ) - IST_OFFSET
+  );
 };
 
-const getMetric = (row, index) =>
-  Number(row?.metricValues?.[index]?.value || 0);
+const getSource = (referrer) => {
+  if (!referrer) return "Direct";
 
-router.get("/overview", requireAdmin, async (req, res) => {
   try {
-    const propertyId = process.env.GA_PROPERTY_ID;
+    const host = new URL(referrer).hostname
+      .replace(/^www\./, "")
+      .toLowerCase();
 
-    if (!propertyId) {
-      return res.status(500).json({
+    if (host.includes("google")) return "Google";
+    if (host.includes("instagram")) return "Instagram";
+    if (host.includes("facebook")) return "Facebook";
+    if (host.includes("linkedin")) return "LinkedIn";
+    if (host.includes("youtube")) return "YouTube";
+
+    return host || "Other";
+  } catch {
+    return "Other";
+  }
+};
+
+// Public API: website visitor tracking
+router.post("/track", async (req, res) => {
+  try {
+    const { visitorId, page, referrer } = req.body || {};
+
+    if (
+      typeof visitorId !== "string" ||
+      visitorId.length < 10 ||
+      visitorId.length > 100 ||
+      typeof page !== "string" ||
+      !page.startsWith("/") ||
+      page.length > 500
+    ) {
+      return res.status(400).json({
         success: false,
-        message: "Google Analytics Property ID is not configured",
+        message: "Invalid visitor data",
       });
     }
 
-    const client = getAnalyticsClient();
-    const property = `properties/${propertyId}`;
+    await AnalyticsVisit.create({
+      visitorId,
+      page,
+      source: getSource(
+        typeof referrer === "string" ? referrer : ""
+      ),
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: "Visit recorded",
+    });
+  } catch (error) {
+    console.error("Visitor tracking error:", error.message);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to record visit",
+    });
+  }
+});
+
+// Admin API: analytics dashboard
+router.get("/overview", requireAdmin, async (req, res) => {
+  try {
+    const now = new Date();
+    const todayStart = getISTDayStart(now);
+    const thirtyDaysStart = new Date(
+      todayStart.getTime() - 29 * 24 * 60 * 60 * 1000
+    );
+    const activeSince = new Date(now.getTime() - 5 * 60 * 1000);
 
     const [
-      overviewReport,
-      todayReport,
-      realtimeReport,
-      dailyReport,
-      trafficReport,
-      pagesReport,
+      totalPageViews,
+      totalVisitorIds,
+      todayVisitorIds,
+      activeVisitorIds,
+      dailyRows,
+      sourceRows,
+      pageRows,
     ] = await Promise.all([
-      client.runReport({
-        property,
-        dateRanges: [{ startDate: "30daysAgo", endDate: "today" }],
-        metrics: [
-          { name: "activeUsers" },
-          { name: "screenPageViews" },
-          { name: "sessions" },
-        ],
+      AnalyticsVisit.countDocuments(),
+
+      AnalyticsVisit.distinct("visitorId"),
+
+      AnalyticsVisit.distinct("visitorId", {
+        createdAt: { $gte: todayStart },
       }),
 
-      client.runReport({
-        property,
-        dateRanges: [{ startDate: "today", endDate: "today" }],
-        metrics: [{ name: "activeUsers" }],
+      AnalyticsVisit.distinct("visitorId", {
+        createdAt: { $gte: activeSince },
       }),
 
-      client.runRealtimeReport({
-        property,
-        metrics: [{ name: "activeUsers" }],
-      }),
+      AnalyticsVisit.aggregate([
+        {
+          $match: {
+            createdAt: { $gte: thirtyDaysStart },
+          },
+        },
+        {
+          $group: {
+            _id: {
+              date: {
+                $dateToString: {
+                  format: "%Y-%m-%d",
+                  date: "$createdAt",
+                  timezone: "Asia/Kolkata",
+                },
+              },
+              visitorId: "$visitorId",
+            },
+          },
+        },
+        {
+          $group: {
+            _id: "$_id.date",
+            visitors: { $sum: 1 },
+          },
+        },
+        { $sort: { _id: 1 } },
+      ]),
 
-      client.runReport({
-        property,
-        dateRanges: [{ startDate: "30daysAgo", endDate: "today" }],
-        dimensions: [{ name: "date" }],
-        metrics: [{ name: "activeUsers" }],
-        orderBys: [{ dimension: { dimensionName: "date" } }],
-      }),
+      AnalyticsVisit.aggregate([
+        {
+          $match: {
+            createdAt: { $gte: thirtyDaysStart },
+          },
+        },
+        {
+          $group: {
+            _id: {
+              source: "$source",
+              visitorId: "$visitorId",
+            },
+          },
+        },
+        {
+          $group: {
+            _id: "$_id.source",
+            visitors: { $sum: 1 },
+          },
+        },
+        { $sort: { visitors: -1 } },
+        { $limit: 10 },
+      ]),
 
-      client.runReport({
-        property,
-        dateRanges: [{ startDate: "30daysAgo", endDate: "today" }],
-        dimensions: [{ name: "sessionDefaultChannelGroup" }],
-        metrics: [{ name: "sessions" }],
-        orderBys: [
-          { metric: { metricName: "sessions" }, desc: true },
-        ],
-        limit: 10,
-      }),
-
-      client.runReport({
-        property,
-        dateRanges: [{ startDate: "30daysAgo", endDate: "today" }],
-        dimensions: [{ name: "pagePath" }],
-        metrics: [{ name: "screenPageViews" }],
-        orderBys: [
-          { metric: { metricName: "screenPageViews" }, desc: true },
-        ],
-        limit: 10,
-      }),
+      AnalyticsVisit.aggregate([
+        {
+          $match: {
+            createdAt: { $gte: thirtyDaysStart },
+          },
+        },
+        {
+          $group: {
+            _id: "$page",
+            views: { $sum: 1 },
+          },
+        },
+        { $sort: { views: -1 } },
+        { $limit: 10 },
+      ]),
     ]);
-
-    const overviewRow = overviewReport[0]?.rows?.[0];
 
     return res.status(200).json({
       success: true,
       data: {
-        totalVisitors: getMetric(overviewRow, 0),
-        pageViews: getMetric(overviewRow, 1),
-        sessions: getMetric(overviewRow, 2),
-        todayVisitors: getMetric(todayReport[0]?.rows?.[0], 0),
-        activeUsers: getMetric(realtimeReport[0]?.rows?.[0], 0),
+        totalVisitors: totalVisitorIds.length,
+        pageViews: totalPageViews,
+        todayVisitors: todayVisitorIds.length,
+        activeUsers: activeVisitorIds.length,
 
-        dailyVisitors: (dailyReport[0]?.rows || []).map((row) => ({
-          date: row.dimensionValues?.[0]?.value || "",
-          visitors: getMetric(row, 0),
+        dailyVisitors: dailyRows.map((row) => ({
+          date: row._id,
+          visitors: row.visitors,
         })),
 
-        trafficSources: (trafficReport[0]?.rows || []).map((row) => ({
-          source: row.dimensionValues?.[0]?.value || "Other",
-          sessions: getMetric(row, 0),
+        trafficSources: sourceRows.map((row) => ({
+          source: row._id || "Other",
+          sessions: row.visitors,
         })),
 
-        topPages: (pagesReport[0]?.rows || []).map((row) => ({
-          page: row.dimensionValues?.[0]?.value || "/",
-          views: getMetric(row, 0),
+        topPages: pageRows.map((row) => ({
+          page: row._id || "/",
+          views: row.views,
         })),
       },
     });
   } catch (error) {
-    console.error("Google Analytics API error:", error.message);
+    console.error("Website analytics error:", error.message);
 
-    return res.status(502).json({
+    return res.status(500).json({
       success: false,
-      message: "Unable to load website analytics. Please check the Analytics configuration.",
+      message: "Unable to load website analytics",
     });
   }
 });
