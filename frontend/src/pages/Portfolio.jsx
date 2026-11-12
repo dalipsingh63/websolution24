@@ -1,3 +1,4 @@
+
 import useSEO from "../utils/useSEO";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
@@ -10,7 +11,12 @@ import {
 import { getPublicPortfolios } from "../services/portfolioService";
 
 export default function Portfolio() {
-  useSEO({ title: 'Website Design Portfolio | DS Digital Studio ', description: 'View selected website development and design projects by Dalip Singh Web Solutions in Jaipur, Rajasthan.', path: '/portfolio' });
+  useSEO({
+    title: "Website Design Portfolio in Jaipur | DS Digital Studio",
+    description:
+      "Explore selected website design and development projects by DS Digital Studio in Jaipur, Rajasthan. See modern, responsive and business-focused website work.",
+    path: "/portfolio",
+  });
 
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -61,7 +67,7 @@ export default function Portfolio() {
       </section>
 
       {/* Projects */}
-     <section className="px-4 pt-10 pb-0 sm:pt-12 sm:pb-0 md:px-8 lg:px-12">
+      <section className="px-4 pt-10 pb-0 sm:pt-12 sm:pb-0 md:px-8 lg:px-12">
         <div className="container-page mx-auto max-w-6xl">
           {loading ? (
             <div className="py-16 text-center">
