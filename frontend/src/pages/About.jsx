@@ -1,3 +1,4 @@
+
 import useSEO from "../utils/useSEO";
 
 import { Link } from "react-router-dom";
@@ -84,7 +85,12 @@ const process = [
 ];
 
 export default function About() {
-  useSEO({ title: 'About Dalip Singh | Web Developer in Jaipur', description: 'Learn about Dalip Singh, a web developer helping businesses with professional websites, website improvements and digital advertising in Jaipur, Rajasthan.', path: '/about' });
+  useSEO({
+    title: "About DS Digital Studio | Web Developer in Jaipur",
+    description:
+      "Learn about DS Digital Studio in Jaipur, Rajasthan. Dalip Singh helps businesses with professional website development, modern website design, website improvements and digital advertising.",
+    path: "/about",
+  });
 
   return (
     <main className="overflow-hidden bg-white text-slate-900">
