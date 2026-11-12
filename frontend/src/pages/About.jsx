@@ -110,7 +110,7 @@ export default function About() {
             <div>
               <div className="inline-flex items-center gap-2 rounded-full border border-lime-300/20 bg-lime-300/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-lime-300">
                 <span className="h-2 w-2 rounded-full bg-lime-300" />
-                About WebSolution
+                About DS Digital Studio
               </div>
 
               <h1 className="mt-4 max-w-3xl text-4xl font-black leading-tight tracking-tight sm:text-5xl lg:text-6xl">
@@ -169,7 +169,7 @@ export default function About() {
                     Meet the Developer
                   </span>
                   <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-300">
-                    WebSolution
+                    DS Digital Studio
                   </span>
                 </div>
 
@@ -235,7 +235,7 @@ export default function About() {
             </p>
 
             <p className="mt-3 leading-8 text-slate-600">
-              Isi soch ke saath WebSolution mein business ki requirements ke
+              Isi soch ke saath DS Digital Studio mein business ki requirements ke
               hisaab se websites aur digital solutions par focus kiya jata
               hai. Har business alag hota hai, isliye project ki planning bhi
               uski zaroorat ke hisaab se honi chahiye.
