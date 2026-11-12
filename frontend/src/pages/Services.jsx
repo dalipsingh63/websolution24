@@ -1,3 +1,4 @@
+
 import useSEO from "../utils/useSEO";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
@@ -8,7 +9,12 @@ import { getActiveServices } from "../services/serviceService";
 import { getServiceIcon } from "../utils/icons";
 
 export default function Services() {
-  useSEO({ title: 'Website Development Services in Jaipur | Dalip Singh', description: 'Explore business website development, e-commerce websites, redesign, maintenance and digital advertising services in Jaipur, Rajasthan.', path: '/services' });
+  useSEO({
+    title: "Website Development Services in Jaipur | DS Digital Studio",
+    description:
+      "Explore professional business website design, e-commerce development, website redesign, maintenance, SEO and digital advertising services in Jaipur, Rajasthan by DS Digital Studio.",
+    path: "/services",
+  });
 
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
